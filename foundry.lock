@@ -1,8 +1,0 @@
-{
-  "lib/solmate": {
-    "rev": "1681dc505f4897ef636f0435d01b1aa027fdafaf"
-  },
-  "lib/forge-std": {
-    "rev": "1680d7fb3e00b7b197a7336e7c88e838c7e6a3ec"
-  }
-}

@@ -1,61 +1,86 @@
-import fs from "fs";
-import "@nomiclabs/hardhat-waffle";
-import "@typechain/hardhat";
-import "hardhat-preprocessor";
-import { HardhatUserConfig, task } from "hardhat/config";
+import '@nomiclabs/hardhat-waffle'
+import '@typechain/hardhat'
+import { HardhatUserConfig, task } from 'hardhat/config'
+import 'hardhat-deploy'
 
-import example from "./tasks/example";
+import 'solidity-coverage'
 
-function getRemappings() {
-  return fs
-    .readFileSync("remappings.txt", "utf8")
-    .split("\n")
-    .filter(Boolean)
-    .map((line) => line.trim().split("="));
+import * as fs from 'fs';
+import './tasks/erc20';
+
+const SALT = '0x0a59dbff790c23c976a548690c27297883cc66b4c67024f9117b0238995e35e9'
+process.env.SALT = process.env.SALT ?? SALT
+
+task('deploy', 'Deploy contracts')
+  .addFlag('simpleAccountFactory', 'deploy sample factory (by default, enabled only on localhost)')
+
+const mnemonicFileName = process.env.MNEMONIC_FILE!
+let mnemonic = 'test '.repeat(11) + 'junk'
+if (fs.existsSync(mnemonicFileName)) { mnemonic = fs.readFileSync(mnemonicFileName, 'ascii') }
+
+function getNetwork1 (url: string): { url: string, accounts: { mnemonic: string } } {
+  return {
+    url,
+    accounts: { mnemonic }
+  }
 }
 
-task("example", "Example task").setAction(example);
+function getNetwork (name: string): { url: string, accounts: { mnemonic: string } } {
+  return getNetwork1(`https://${name}.infura.io/v3/${process.env.INFURA_ID}`)
+  // return getNetwork1(`wss://${name}.infura.io/ws/v3/${process.env.INFURA_ID}`)
+}
+
+const optimizedCompilerSettings = {
+  version: '0.8.28',
+  settings: {
+    evmVersion: 'cancun',
+    optimizer: { enabled: true, runs: 1000000 },
+    viaIR: true
+  }
+}
+
+// You need to export an object to set up your config
+// Go to https://hardhat.org/config/ to learn more
 
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [{
-      version: "0.8.13",
+      version: '0.8.28',
       settings: {
-        optimizer: {
-          enabled: true,
-          runs: 200,
-        },
-      },
-    },
-    {
-      version: "0.8.20",
-      settings: {
-        optimizer: {
-          enabled: true,
-          runs: 200,
-        },
-      },
+        evmVersion: 'cancun',
+        viaIR: true,
+        optimizer: { enabled: true, runs: 1000000 }
+      }
     }],
+    overrides: {
+      'contracts/core/EntryPoint.sol': optimizedCompilerSettings,
+      'contracts/core/EntryPointSimulations.sol': optimizedCompilerSettings,
+      'contracts/accounts/SimpleAccount.sol': optimizedCompilerSettings
+    }
   },
-  paths: {
-    sources: "./src", // Use ./src rather than ./contracts as Hardhat expects
-    cache: "./cache_hardhat", // Use a different cache for Hardhat than Foundry
+  networks: {
+    dev: { url: 'http://localhost:8545' },
+    // github action starts localgeth service, for gas calculations
+    localgeth: { url: 'http://localgeth:8545' },
+    sepolia: {
+      url: '...',
+      accounts: { mnemonic },
+    },
+    proxy: getNetwork1('http://localhost:8545'),
+    opl2: {
+      url: 'https://l2ops-node.eternalai.org/',
+      accounts: ['...']
+    }
   },
-  // This fully resolves paths for imports in the ./lib directory for Hardhat
-  preprocess: {
-    eachLine: (hre) => ({
-      transform: (line: string) => {
-        if (line.match(/^\s*import /i)) {
-          getRemappings().forEach(([find, replace]) => {
-            if (line.match(find)) {
-              line = line.replace(find, replace);
-            }
-          });
-        }
-        return line;
-      },
-    }),
-  },
-};
+  mocha: {
+    timeout: 10000
+  }
+}
 
-export default config;
+// coverage chokes on the "compilers" settings
+if (process.env.COVERAGE != null) {
+  // @ts-ignore
+  config.solidity = config.solidity.compilers[0]
+}
+
+export default config

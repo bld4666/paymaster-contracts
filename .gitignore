@@ -1,13 +1,20 @@
-# Foundry
-cache/
-out/
-
-# JS
-node_modules/
+node_modules
 
 #Hardhat files
-cache_hardhat/
-artifacts/
-
-#Hardhat plugin files
-typechain-types/
+cache
+artifacts
+/.idea/
+/typechain/
+/dist/
+/yarn-error.log
+/deployments/dev/
+/deployments/localhost/
+/deployments/proxy/
+/typechain-types/
+/reports/gas-used-output.color
+/coverage
+/coverage.json
+/.DS_Store
+.DS_Store
+/contracts/dist/
+/contracts/types/
