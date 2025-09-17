@@ -51,9 +51,36 @@ export function packUserOp (userOp: UserOperation): PackedUserOperation {
     preVerificationGas: userOp.preVerificationGas,
     gasFees,
     paymasterAndData,
-    signature: userOp.signature
+    signature: userOp.signature    
   }
 }
+
+export function packUserOpHex (userOp: UserOperation): any {
+  const accountGasLimits = packAccountGasLimits(userOp.verificationGasLimit, userOp.callGasLimit)
+  const gasFees = packAccountGasLimits(userOp.maxPriorityFeePerGas, userOp.maxFeePerGas)
+  let paymasterAndData = '0x'
+  if (userOp.paymaster?.length >= 20 && userOp.paymaster !== AddressZero) {
+    paymasterAndData = packPaymasterData(userOp.paymaster as string, userOp.paymasterVerificationGasLimit, userOp.paymasterPostOpGasLimit, userOp.paymasterData as string)
+  }
+  return {
+    sender: userOp.sender,
+    nonce: hexlify(userOp.nonce),
+    callData: userOp.callData,
+    initCode: userOp.initCode,
+    preVerificationGas: hexlify(userOp.preVerificationGas),
+    verificationGasLimit: hexlify(userOp.verificationGasLimit),
+    callGasLimit: hexlify(userOp.callGasLimit),
+    maxPriorityFeePerGas: hexlify(userOp.maxPriorityFeePerGas),
+    maxFeePerGas: hexlify(userOp.maxFeePerGas),
+    paymaster: userOp.paymaster,
+    paymasterData: userOp.paymasterData,
+    paymasterVerificationGasLimit: hexlify(userOp.paymasterVerificationGasLimit),
+    paymasterPostOpGasLimit: hexlify(userOp.paymasterPostOpGasLimit),
+    signature: userOp.signature,
+    value: '0x00'
+  }
+}
+
 export function encodeUserOp (userOp: UserOperation, forSignature = true): string {
   const packedUserOp = packUserOp(userOp)
   if (forSignature) {
