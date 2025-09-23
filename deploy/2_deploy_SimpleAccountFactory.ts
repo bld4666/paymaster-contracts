@@ -14,7 +14,7 @@ const deploySimpleAccountFactory: DeployFunction = async function (hre: HardhatR
   // }
 
   const entrypoint = await hre.deployments.get('EntryPoint');
-  const pm = await hre.deployments.get('SimpleERC20Paymaster');
+  const pm = await hre.deployments.get('ERC20Paymaster');
   const gt = await hre.deployments.get('GasToken');
   await hre.deployments.deploy(
     'SimpleAccountFactory', {

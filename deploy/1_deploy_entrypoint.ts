@@ -28,14 +28,14 @@ const deployEntryPoint: DeployFunction = async function (hre: HardhatRuntimeEnvi
   console.log('==gastoken addr=', gtDeployResult.address);
 
   const pmDeployResult = await hre.deployments.deploy(
-    'SimpleERC20Paymaster', {
+    'ERC20Paymaster', {
       from,
       args: [ret.address, gtDeployResult.address],
       deterministicDeployment: false,
       log: true
     });
   
-  const res = await hre.deployments.execute('SimpleERC20Paymaster', {
+  const res = await hre.deployments.execute('ERC20Paymaster', {
     from,
     to: pmDeployResult.address,
     value: ethers.utils.parseEther('0.001'),

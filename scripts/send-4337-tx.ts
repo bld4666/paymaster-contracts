@@ -19,7 +19,7 @@ async function main() {
     const eoa = new ethers.Wallet("...", ethers.provider);
     const bundler = new ethers.Wallet("...", ethers.provider);
     const gasTokenDeployment = await deployments.get("GasToken");
-    const paymasterDeployment = await deployments.get("SimpleERC20Paymaster");
+    const paymasterDeployment = await deployments.get("ERC20Paymaster");
     const entryPointDeployment = await deployments.get("EntryPoint");
     const accfacd = await deployments.get("SimpleAccountFactory");
     const gasToken = (await ethers.getContractFactory("GasToken")).attach(gasTokenDeployment.address).connect(fundSrc);
@@ -27,8 +27,8 @@ async function main() {
     const fac = await ethers.getContractFactory("SimpleAccountFactory");
     const accountFactory = fac.attach(accfacd.address);
     
-    const paymasterVerificationGasLimit = 150_000n;
-    const paymasterPostOpGasLimit = 300_000n;
+    const paymasterVerificationGasLimit = 100_000n;
+    const paymasterPostOpGasLimit = 100_000n;
     const callGasLimit = 200_000n;
     const verificationGasLimit = 500_000n;
     const salt = 42;

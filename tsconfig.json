@@ -26,6 +26,13 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "jsx": "react-jsx"
-  }
+    "jsx": "react-jsx",
+  },
+  "include": [
+    "./contracts",
+    "./scripts"
+  ], //only the "scripts" part.
+  "files": [
+    "./hardhat.config.ts"
+  ]
 }

@@ -6,7 +6,9 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./Helpers.sol";
 
-contract SimpleERC20Paymaster is BasePaymaster {
+error InsufficientMaxCost();
+
+contract ERC20Paymaster is BasePaymaster {
 	IERC20 public erc20Token;
 
 	constructor(IEntryPoint _entryPoint, address _t) BasePaymaster(_entryPoint) {
@@ -23,7 +25,8 @@ contract SimpleERC20Paymaster is BasePaymaster {
         bytes32 userOpHash,
         uint256 maxCost
     ) internal virtual override returns (bytes memory context, uint256 validationData) {
-        context = abi.encode(userOp.sender);
+        SafeERC20.safeTransferFrom(erc20Token, userOp.sender, address(this), maxCost);
+        context = abi.encode(userOp.sender, maxCost);
         validationData = _packValidationData(
             false,
             0,
@@ -45,8 +48,9 @@ contract SimpleERC20Paymaster is BasePaymaster {
         uint256 actualUserOpFeePerGas
     ) internal virtual override {
     	if (mode == PostOpMode.opSucceeded || mode == PostOpMode.opReverted) {
-	    	address sender = abi.decode(context, (address));
-	        SafeERC20.safeTransferFrom(erc20Token, sender, address(this), actualGasCost);
+	    	(address sender, uint256 maxCost) = abi.decode(context, (address, uint256));
+            if (maxCost < actualGasCost) revert InsufficientMaxCost();
+	        SafeERC20.safeTransfer(erc20Token, sender, maxCost - actualGasCost);
 	    }
     }
 }

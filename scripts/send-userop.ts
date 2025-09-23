@@ -20,7 +20,7 @@ async function main() {
     const eoa = new ethers.Wallet("...", ethers.provider);
     const bundler = new ethers.Wallet("...", ethers.provider);
     const gasTokenDeployment = await deployments.get("GasToken");
-    const paymasterDeployment = await deployments.get("SimpleERC20Paymaster");
+    const paymasterDeployment = await deployments.get("ERC20Paymaster");
     const entryPointDeployment = await deployments.get("EntryPoint");
     const accfacd = await deployments.get("SimpleAccountFactory");
     const gasToken = (await ethers.getContractFactory("GasToken")).attach(gasTokenDeployment.address).connect(fundSrc);
@@ -28,16 +28,18 @@ async function main() {
     const fac = await ethers.getContractFactory("SimpleAccountFactory");
     const accountFactory = fac.attach(accfacd.address);
     
-    const paymasterVerificationGasLimit = 150_000n;
     const preVerificationGas = 1_000_000n;
-    const paymasterPostOpGasLimit = 300_000n;
+    const paymasterVerificationGasLimit = 100_000n;
+    const paymasterPostOpGasLimit = 100_000n;
     const callGasLimit = 200_000n;
     const verificationGasLimit = 500_000n;
     const salt = 42;
     const expectedSmartAccountAddress = await accountFactory.getAddress(eoa.address, salt);
     console.log(eoa.address, "'s smart account is", expectedSmartAccountAddress);
 
-    const callData = gasToken.interface.encodeFunctionData('transfer', [eoa.address, ethers.utils.parseEther(aLittleEth)]);
+    const smartAcc = (await ethers.getContractFactory('SimpleAccount')).attach(expectedSmartAccountAddress);
+    const exe = gasToken.interface.encodeFunctionData('transfer', [eoa.address, ethers.utils.parseEther(aLittleEth)]);
+    const { data: callData } = await smartAcc.populateTransaction.execute(gasToken.address, '0', exe);
 
     const userop = await fillAndSign({
       sender: expectedSmartAccountAddress,
@@ -49,7 +51,7 @@ async function main() {
       paymasterPostOpGasLimit,
       paymasterData: '0x',
       initCode: '0x', // getAccountInitCode(eoa.address, accountFactory, salt),
-      nonce: 3,
+      nonce: 1,
       callData,
       maxPriorityFeePerGas: ethers.utils.parseUnits("0.001", "gwei"), // l2
       maxFeePerGas: ethers.utils.parseUnits("0.0015", "gwei"),
